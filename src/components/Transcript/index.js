@@ -41,7 +41,7 @@ const Transcript = (props) => {
           }
         )
       }
-    </div>, []
+    </div>, [word_timings]
   )
 }
 

@@ -13,6 +13,7 @@ const Timer = () => {
   const [timer, setTimer] = useState("00:00");
 
   const updateTimer = (time) => {
+    console.log(timer);
     time = formatSecondsAsTime(time + 's');
     setTimer(time);
   };
@@ -21,7 +22,7 @@ const Timer = () => {
     dispatch({type: ACTIONS.SYNC_TIMER, payload: {
         updateTimer
       }});
-  }, );
+  }, []);
 
   return (
       <div className={Styles.container}>
