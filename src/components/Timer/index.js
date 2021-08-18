@@ -21,7 +21,7 @@ const Timer = () => {
     dispatch({type: ACTIONS.SYNC_TIMER, payload: {
         updateTimer
       }});
-  }, []);
+  }, );
 
   return (
       <div className={Styles.container}>

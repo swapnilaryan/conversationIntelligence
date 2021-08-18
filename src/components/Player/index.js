@@ -14,7 +14,6 @@ const Player = () => {
     setShowDropDown,
     forward,
     backward,
-    convInt,
     dispatch,
     play,
     pause
