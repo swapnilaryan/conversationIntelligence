@@ -1,0 +1,49 @@
+.loaderAnimationContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100000;
+}
+
+.backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 14;
+}
+
+.spinnerContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 5px;
+  border-radius: 20px;
+  transform: translate(-50%, -50%);
+  z-index: 14;
+  background-color: #ffffff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.spinner {
+  height: 20px;
+  width: 20px;
+  animation: rotate 0.8s infinite linear;
+  border: 2px solid #1991EB;
+  border-right-color: transparent;
+  border-radius: 20px;
+  will-change: transform;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,60 @@
+.container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 10px;
+}
+
+.container .text {
+    border-left: 2px solid #1991EB;
+    padding: 10px;
+}
+
+.container:nth-child(even) {
+    padding-left: 50px;
+}
+
+.container:nth-child(even) .text {
+    border-left: 2px solid #02C797;
+}
+
+.time {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    margin-right: 10px;
+    color: #1991EB;
+}
+
+.container:nth-child(even) .time {
+    color: #02C797;
+}
+
+.text {
+    color: #5D6A7E;
+}
+
+.transcript {
+    padding: 0 10px;
+}
+
+.containerHighlight, .container:hover {
+    background: #EDF7FF;
+    cursor: pointer;
+}
+
+.highlight {
+    background: #B6DCFD;
+    border-radius: 4px;
+    /*animation: opaque 1s;*/
+}
+
+@keyframes opaque {
+    from {
+        background: #B6DCFD;
+    }
+
+    to {
+        background: transparent;
+    }
+}

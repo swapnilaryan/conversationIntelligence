@@ -1,0 +1,18 @@
+.container {
+    padding: 10px;
+    background: #F8F9FB;
+}
+.duration {
+    color: #949FB1;
+}
+
+.currTime {
+    color: #242D3E;
+}
+
+.block {
+    width: 100px;
+    border-radius: 4px;
+    background: #E8EEF4;
+    padding: 10px;
+}

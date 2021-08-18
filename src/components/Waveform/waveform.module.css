@@ -1,0 +1,28 @@
+.container {
+    padding: 0 10px;
+    cursor: pointer;
+    position: relative;
+    background: #F8F9FB;
+}
+
+.svgClass {
+    fill: #333;
+    stroke-width: 100px;
+}
+
+.stroke1 {
+    stroke: #1991EB;
+    stroke-dasharray: 2;
+}
+
+.stroke2 {
+    stroke: #02C797;
+    stroke-dasharray: 2;
+}
+
+.stroke0 {
+    stroke: black;
+    stroke-dasharray: 2;
+    stroke-dashoffset: 2;
+    stroke-linecap: butt;
+}
