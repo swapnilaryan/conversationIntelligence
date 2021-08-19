@@ -27,16 +27,20 @@ const calBlockPercentage = (percentage, playedPercentage, prevPercentage) => {
 let playingIndex = 0;
 let percentage = 0;
 let prevPercentage = 0;
+let person1Percent;
+let person2Percent;
 
 const Waveform = () => {
   const {
     audioRef,
     dispatch,
-    syncWaveformAudio
+    syncTime
   } = useContext(ConvIntContext);
 
   const waveformRef = useRef(null);
   const waveformRefList = useRef([]);
+  const graphRef = useRef(null);
+  const personRef = useRef(null);
 
   const resetWaveform = () => {
     playingIndex = 0;
@@ -59,6 +63,9 @@ const Waveform = () => {
       const blockPercentage = Math.ceil(calBlockPercentage(percentage, playedPercentage, prevPercentage));
       if(blockPercentage >= 100 ) {
         playingIndex++;
+        if(playingIndex > svgList.length) {
+          playingIndex = svgList.length
+        }
         prevPercentage += parseFloat(svgList[playingIndex-1].getAttribute("width").replace("%"));
       }
       if(blockPercentage < 0) {
@@ -73,12 +80,27 @@ const Waveform = () => {
     return prevPercentage;
   }
 
+  const calcPlayingIndex = (elapsedTime, duration) => {
+    const percentageWidth = waveformRefList.current.reduce((accum, currVal, index) => {
+      if(index > 0) {
+        accum.push(accum[index - 1] + parseFloat(currVal.getAttribute("width").replace("%")));
+      } else {
+        accum.push(parseFloat(currVal.getAttribute("width").replace("%")));
+      }
+      return accum;
+    }, []);
+    const playedPercent = calPlayedPercentageTime(elapsedTime, duration);
+    const index = percentageWidth.findIndex(item => item > playedPercent);
+    return index === -1 ? 0 : index;
+  }
+
   const syncWaveform = (elapsedTime) => {
-    if(elapsedTime === 0.1) {
+    if(elapsedTime <= 0.1) {
       resetWaveform();
     }
     const playedPercentage = calPlayedPercentageTime(elapsedTime, audioRef.current.duration);
     const svgList = waveformRefList.current;
+
     if (playingIndex < svgList.length) {
       const svgEl = svgList[playingIndex];
       percentage = parseFloat(svgEl.getAttribute("width").replace("%"));
@@ -95,7 +117,62 @@ const Waveform = () => {
     }
   }
 
+  const calculatePercentage = () => {
+    person1Percent = 0;
+    person2Percent = 0;
+    word_timings.forEach((word_timing, index) => {
+      const lastIdx = word_timing.length - 1;
+      if(index % 2 === 0) {
+        person1Percent += timeDiff(word_timing[lastIdx].endTime, word_timing[0].startTime);
+      } else {
+        person2Percent += timeDiff(word_timing[lastIdx].endTime, word_timing[0].startTime);
+      }
+    });
+    person1Percent = calPlayedPercentageTime(person1Percent, audioRef.current.duration).toFixed(1);
+    person2Percent = calPlayedPercentageTime(person2Percent, audioRef.current.duration).toFixed(1);
+  }
+
+  const setAttributes = (svgEl, x2Val) => {
+    const el = svgEl.getElementsByTagName("line")[1];
+    el.setAttribute("x2", x2Val);
+    el.style.stroke = "#D3DAE3";
+  }
+  const syncWaveformClick = (clickedTime, playingIndex) => {
+    resetX2LineSvg();
+    prevPercentage = 0;
+    for(let i=0;i<playingIndex;i++) {
+      const svgEl = waveformRefList.current[i];
+      setAttributes(svgEl, "100%");
+      prevPercentage += parseFloat(svgEl.getAttribute("width").replace("%"))
+    }
+    const playedPercentage = calPlayedPercentageTime(clickedTime, audioRef.current.duration);
+    const svgEl = waveformRefList.current[playingIndex];
+    const percentage = parseFloat(svgEl.getAttribute("width").replace("%"))
+    const blockPercentage = Math.floor(calBlockPercentage(percentage, playedPercentage, prevPercentage));
+
+    setAttributes(svgEl, blockPercentage+"%");
+    syncTime(clickedTime);
+  }
+
+  const handleSync = (time, event) => {
+    while(event &&  ( (event.target && event.target.nodeName) || event.tagName )!== "svg") {
+      event = event.target ? event.target.parentNode : event.parentNode;
+    }
+    if(event) {
+      playingIndex = Math.max(waveformRefList.current.indexOf(event), waveformRefList.current.indexOf(event.target))
+      syncWaveformClick(time, playingIndex);
+    }
+  };
+
+  const handleClick = (event) => {
+    const time = Math.abs(audioRef.current.duration / graphRef.current.offsetWidth * (event.pageX - personRef.current.offsetWidth))
+    const clickedTime = parseFloat(time.toFixed(1));
+    syncTime(clickedTime);
+    handleSync(clickedTime, event)
+  }
+
   useEffect(() => {
+    calculatePercentage();
     dispatch({type: ACTIONS.SYNC_WAVEFORM, payload: {
         syncWaveform,
         resetWaveform,
@@ -123,44 +200,6 @@ const Waveform = () => {
     )
   }
 
-  const setAttributes = (svgEl, x2Val) => {
-    const el = svgEl.getElementsByTagName("line")[1];
-    el.setAttribute("x2", x2Val);
-    el.style.stroke = "#D3DAE3";
-  }
-  const syncWaveformClick = (clickedTime, playingIndex) => {
-    resetX2LineSvg();
-    prevPercentage = 0;
-    for(let i=0;i<playingIndex;i++) {
-      const svgEl = waveformRefList.current[i];
-      setAttributes(svgEl, "100%");
-      prevPercentage += parseFloat(svgEl.getAttribute("width").replace("%"))
-    }
-    const playedPercentage = calPlayedPercentageTime(clickedTime, audioRef.current.duration);
-    const svgEl = waveformRefList.current[playingIndex];
-    const percentage = parseFloat(svgEl.getAttribute("width").replace("%"))
-    const blockPercentage = Math.floor(calBlockPercentage(percentage, playedPercentage, prevPercentage));
-    setAttributes(svgEl, blockPercentage+"%");
-    syncWaveformAudio(clickedTime);
-  }
-
-  const handleSync = (time, event) => {
-    while(event &&  ( (event.target && event.target.nodeName) || event.tagName )!== "svg") {
-      event = event.target ? event.target.parentNode : event.parentNode;
-    }
-    if(event) {
-      playingIndex = Math.max(waveformRefList.current.indexOf(event), waveformRefList.current.indexOf(event.target))
-      syncWaveformClick(time, playingIndex);
-    }
-  };
-
-  const handleClick = (event) => {
-    const time = Math.abs(audioRef.current.duration / (document.documentElement.offsetWidth) * (event.pageX))
-    const clickedTime = parseFloat(time.toFixed(1));
-    handleSync(clickedTime, event)
-    syncWaveformAudio(clickedTime);
-  }
-
   // 0 to 1st word
   const beforeCommunication = () => {
     const diff = timeDiff(word_timings[0][0].startTime, '0s')
@@ -176,31 +215,38 @@ const Waveform = () => {
     return formJsx(1, width, 1);
   }
 
+
   return (
     <div className={Styles.container} onClick={handleClick} ref={waveformRef}>
-      {beforeCommunication()}
-      {
-        word_timings.map((word_timing, index) => {
-          const duration = audioRef.current.duration;
-          let diff = 0;
-          let width = 0;
-          let svgArr = [];
+      <div className={Styles.person}  ref={personRef}>
+        <div className={Styles.firstPerson}><span>{person1Percent}%</span><span> Person 1</span></div>
+        <div className={Styles.secondPerson}><span>{person2Percent}%</span><span> Person 2</span></div>
+      </div>
+      <div className={Styles.graph} ref={graphRef}>
+        {beforeCommunication()}
+        {
+          word_timings.map((word_timing, index) => {
+            const duration = audioRef.current.duration;
+            let diff = 0;
+            let width = 0;
+            let svgArr = [];
 
-          if(index > 0) {
-            const lastIdx = word_timings[index - 1].length - 1;
-            diff = timeDiff(word_timing[0].startTime, word_timings[index - 1][lastIdx].endTime);
+            if(index > 0) {
+              const lastIdx = word_timings[index - 1].length - 1;
+              diff = timeDiff(word_timing[0].startTime, word_timings[index - 1][lastIdx].endTime);
+              width = calDiffDuration(diff, duration);
+              svgArr.push(formJsx(index, width, index));
+            }
+
+            const lastIdx = word_timing.length - 1;
+            diff = timeDiff(word_timing[lastIdx].endTime, word_timing[0].startTime);
             width = calDiffDuration(diff, duration);
-            svgArr.push(formJsx(index, width, index));
-          }
-
-          const lastIdx = word_timing.length - 1;
-          diff = timeDiff(word_timing[lastIdx].endTime, word_timing[0].startTime);
-          width = calDiffDuration(diff, duration);
-          svgArr.push(formJsx(index, width));
-          return svgArr;
-        })
-      }
-      {afterCommunication()}
+            svgArr.push(formJsx(index, width));
+            return svgArr;
+          })
+        }
+        {afterCommunication()}
+      </div>
     </div>
   );
 

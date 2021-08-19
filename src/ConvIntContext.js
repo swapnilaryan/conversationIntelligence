@@ -2,7 +2,7 @@ import React, {useEffect, useReducer, useRef, useState} from "react";
 import reducer, {ACTIONS} from "./reducer";
 import TransformTranscript from "./common/transformTranscript";
 import {transcriptJson} from "./transcript";
-import Styles from "./components/Transcript/transcript.module.css";
+import TranscriptStyles from "./components/Transcript/transcript.module.css";
 
 const NORMAL_PLAYBACK_RATE = 100
 const SECONDS = 5;
@@ -28,6 +28,7 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
   const [playBackRate, setPlayBackRate] = useState(PLAY_BACK_RATE_LIST[1]);
   const [showDropDown, setShowDropDown] = useState(false);
   const [convInt, dispatch] = useReducer(reducer, {});
+  const [timer, setTimer] = useState("00:00");
 
   const getElapsedTime = () => {
     return elapsedTime;
@@ -54,24 +55,57 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     return -1;
   }
 
-  const syncTime = (time) => {
+  const syncTime = (time, event) => {
     const {
       audioRef
     } = value;
     elapsedTime = (+time) - 0.1;
     audioRef.current.currentTime = elapsedTime;
     parentContainerIdx = setParentIndex(time);
+    event ? syncWordAudio(event) : syncWordAudio(getWordEl(time));
+    syncWords(time);
+    dispatch({type:ACTIONS.UPDATE_TIMER, payload: {time}});
+    dispatch({type:ACTIONS.SYNC_BAR, payload: {time}});
   }
 
-  const syncWaveformAudio = (time) => {
-    syncTime(time);
+  const getWordEl = (time) => {
+    const index = timeRange.findIndex((item) => {
+      return item.startTime <= time && time <= item.endTime
+    });
+    if (index !== -1) {
+      const keys = Object.keys(wordObj);
+      let wordTime = null;
+      for(let i= 0;i<keys.length;i++) {
+        if (parseFloat(keys[i]) >= parseFloat(time.toFixed(3))) {
+          wordTime = keys[i];
+          break;
+        }
+      }
+
+      return {
+        target: document.getElementsByClassName(wordTime)[0]
+      }
+    }
   }
 
   const syncWordAudio = (event) => {
+    removePrevElClass();
+    removeParentBg();
     if (event && event.target && event.target.nodeName.toLowerCase() === "span") {
-      const time = event.target.getAttribute("data-time").replace("s", "");
-      syncTime(time);
+      let el = event.target;
+      // const time = el.getAttribute("data-time").replace("s", "");
+      el.classList.add(TranscriptStyles.highlight);
+      prevElem = el;
+      while(!el.parentNode.classList.contains(TranscriptStyles.transcript)) {
+        el = el.parentNode;
+      }
+      el.classList.add(TranscriptStyles.containerHighlight);
+      // syncTime(time);
     }
+  }
+
+  const resetPrevEl = () => {
+    prevElem = null;
   }
 
   const resetIndex = () => {
@@ -81,15 +115,14 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
 
   const removePrevElClass = () => {
     // remove the last word highlight
-    prevElem && prevElem.classList.remove(Styles.highlight);
-    prevElem = null;
+    prevElem && prevElem.classList.remove(TranscriptStyles.highlight);
   }
 
   const removeParentBg = () => {
     // remove the container bg od last transcript
     if(wordBlockRefList.current.length) {
       wordBlockRefList.current.forEach(refList => {
-        refList && refList.classList.remove(Styles.containerHighlight);
+        refList && refList.classList.remove(TranscriptStyles.containerHighlight);
       });
     }
   }
@@ -98,13 +131,13 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     const {
       audioRef
     } = value;
-    if(audioRef && audioRef.current) {
+    if(audioRef && audioRef.current && elapsedTime) {
       const time = parseFloat(Math.round(audioRef.current.currentTime).toFixed(1)) - SECONDS
       audioRef.current.currentTime = time < 0 ? 0 : time;
       elapsedTime = audioRef.current.currentTime;
       parentContainerIdx = setParentIndex(time);
       removeParentBg();
-      convInt.updateTimer(elapsedTime);
+      syncTime(elapsedTime);
       if (audioRef.current.currentTime <= 0) {
         resetIndex();
         removePrevElClass();
@@ -117,11 +150,11 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     const {
       audioRef
     } = value;
-    if(audioRef && audioRef.current) {
-      audioRef.current.currentTime = parseFloat(Math.round(audioRef.current.currentTime).toFixed(1)) + SECONDS;
-      elapsedTime = audioRef.current.currentTime;
-      convInt.updateTimer(elapsedTime);
-      convInt.syncWaveform(elapsedTime);
+    if(audioRef && audioRef.current && elapsedTime < audioRef.current.duration) {
+      const time = parseFloat(Math.round(elapsedTime).toFixed(1)) + SECONDS
+      elapsedTime = time <= audioRef.current.duration ? time : audioRef.current.duration;
+      audioRef.current.currentTime = elapsedTime;
+      syncTime(elapsedTime);
     }
   }
 
@@ -129,10 +162,10 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     const parentEl = wordBlockRefList.current[index];
     if(index > 0) {
       const prevParent = wordBlockRefList.current[index - 1];
-      prevParent && prevParent.classList.remove(Styles.containerHighlight);
+      prevParent && prevParent.classList.remove(TranscriptStyles.containerHighlight);
     }
-    if (parentEl && !parentEl.classList.contains(Styles.containerHighlight)) {
-      parentEl.classList.add(Styles.containerHighlight);
+    if (parentEl && !parentEl.classList.contains(TranscriptStyles.containerHighlight)) {
+      parentEl.classList.add(TranscriptStyles.containerHighlight);
     }
   }
 
@@ -151,9 +184,9 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
         spanEl = wordBlockRefList.current[parentContainerIdx].getElementsByClassName(keyTime)[0];
       }
 
-      if(spanEl && !spanEl.classList.contains(Styles.highlight)) {
-        prevElem && prevElem.classList.remove(Styles.highlight);
-        spanEl.classList.add(Styles.highlight);
+      if(spanEl && !spanEl.classList.contains(TranscriptStyles.highlight)) {
+        prevElem && prevElem.classList.remove(TranscriptStyles.highlight);
+        spanEl.classList.add(TranscriptStyles.highlight);
         prevElem = spanEl;
       }
       if (highlightWord === wordTiming[wordTiming.length - 1].word) {
@@ -170,7 +203,6 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
   }
 
   const play = () => {
-    console.log(convInt)
     const {
       audioRef
     } = value;
@@ -178,7 +210,6 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     timerInterval = setInterval(playAudio, NORMAL_PLAYBACK_RATE / playBackRate);
   }
   const pause = () => {
-    console.log("convInt", convInt)
     const {
       audioRef
     } = value;
@@ -189,16 +220,14 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
   const reset = () => {
     dispatch({type: ACTIONS.RESET_WAVEFORM, payload: {}});
     dispatch({type: ACTIONS.RESET_TIMER, payload: {}});
-    resetIndex();
+    dispatch({type: ACTIONS.PAUSE, payload: {pause}});
     setPlaying(false);
+    resetIndex();
     removePrevElClass();
+    resetPrevEl();
     removeParentBg();
     clearInterval(timerInterval);
   }
-
-  // useEffect(() => {
-  //   playing ? play() : pause();
-  // }, [playing]);
 
   useEffect(() => {
     const {
@@ -208,9 +237,9 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     audioRef.current.addEventListener("canplaythrough", () => {
       setLoading(false);
     });
-    return () => {
-      audioRef.current.removeEventListener('ended', reset);
-    };
+    // return () => {
+    //   audioRef.current.removeEventListener('ended', reset);
+    // };
 
   }, [audio]);
 
@@ -245,8 +274,10 @@ const ConvIntProvider = ({children, audio, setLoading}) => {
     forward,
     backward,
     syncWordAudio,
-    syncWaveformAudio,
-    getElapsedTime
+    syncTime,
+    getElapsedTime,
+    timer,
+    setTimer
   };
 
 

@@ -4,7 +4,9 @@ export const ACTIONS = {
   RESET_WAVEFORM: 'resetWaveform',
   SYNC_WAVEFORM: 'syncWaveform',
   SYNC_TIMER: "syncTimer",
-  RESET_TIMER: "resetTimer"
+  RESET_TIMER: "resetTimer",
+  UPDATE_TIMER: "updateTimer",
+  SYNC_BAR: "syncBar"
 }
 const reducer = (state, action) => {
   switch (action.type) {
@@ -26,6 +28,16 @@ const reducer = (state, action) => {
       const timerObj = {...state, ...action};
       timerObj.updateTimer(0);
       return timerObj;
+
+    case ACTIONS.UPDATE_TIMER:
+      const objTime = {...state, ...action};
+      objTime.updateTimer(objTime.payload.time);
+      return objTime;
+
+    case ACTIONS.SYNC_BAR:
+      const objBar = {...state, ...action};
+      objBar.syncWaveform(objBar.payload.time);
+      return objBar;
 
     case ACTIONS.RESET_WAVEFORM:
       const obj = {...state, ...action};

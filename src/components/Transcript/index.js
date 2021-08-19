@@ -1,11 +1,11 @@
 import React, {useContext, useMemo} from "react";
 import Styles from "./transcript.module.css";
-import {formatSecondsAsTime} from "../../common/utils";
+import {formatSecondsAsTime, parseTime} from "../../common/utils";
 import {ConvIntContext} from "../../ConvIntContext";
 
 const Transcript = (props) => {
   const {
-    syncWordAudio,
+    syncTime,
     wordBlockRefList
   } = useContext(ConvIntContext);
 
@@ -19,6 +19,14 @@ const Transcript = (props) => {
     el && wordBlockRefList.current.push(el)
   }
 
+  const onTextClick = (event) => {
+    const dataTimeAttr = event.target.getAttribute("data-time");
+    if (dataTimeAttr) {
+      const time = parseFloat(dataTimeAttr).toFixed(1);
+      syncTime(parseFloat(time), event);
+    }
+  }
+
   return useMemo(() =>
     <div className={Styles.transcript}>
       {
@@ -26,7 +34,7 @@ const Transcript = (props) => {
             return (
               <div key={index} className={Styles.container} ref={setRef}>
                 <div className={Styles.time}>{formatSecondsAsTime(wordsArr[0].startTime)}</div>
-                <div className={Styles.text} onClick={syncWordAudio}>
+                <div className={Styles.text} onClick={onTextClick}>
                   {
                     wordsArr.map((item, index) => {
                       const startTime = parseFloat(item.startTime.replace("s", ""));

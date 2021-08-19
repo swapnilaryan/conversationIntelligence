@@ -3,6 +3,8 @@
     cursor: pointer;
     position: relative;
     background: #F8F9FB;
+    display: flex;
+    align-items: center;
 }
 
 .svgClass {
@@ -11,12 +13,12 @@
 }
 
 .stroke1 {
-    stroke: #1991EB;
+    stroke: #02C797;
     stroke-dasharray: 2;
 }
 
 .stroke2 {
-    stroke: #02C797;
+    stroke: #1991EB;
     stroke-dasharray: 2;
 }
 
@@ -25,4 +27,28 @@
     stroke-dasharray: 2;
     stroke-dashoffset: 2;
     stroke-linecap: butt;
+}
+
+.firstPerson {
+    color: #02C797;
+}
+
+.secondPerson {
+    color: #1991EB;
+}
+
+.firstPerson, .secondPerson {
+    font-weight: 600;
+    line-height: 16px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.graph {
+    flex: 10;
+}
+
+.person {
+    flex: 1;
 }
